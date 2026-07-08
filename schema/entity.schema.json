@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://compintel-scout.local/schema/entity.schema.json",
+  "title": "CompIntel Entity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "category", "sources"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": ["company", "product", "market", "person", "unknown"]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

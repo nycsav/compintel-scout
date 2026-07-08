@@ -1,0 +1,16 @@
+[project]
+name = "compintel-scout"
+version = "0.1.0"
+description = "Model-agnostic competitive-intelligence agent scaffold."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]

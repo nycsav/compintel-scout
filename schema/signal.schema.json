@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://compintel-scout.local/schema/signal.schema.json",
+  "title": "CompIntel Signal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "signal_type", "source", "confidence"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "signal_type": {
+      "type": "string",
+      "enum": ["pricing", "product", "positioning", "hiring", "partnership", "funding", "other"]
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "notes": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "related_competitors": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}
