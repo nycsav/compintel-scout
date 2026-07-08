@@ -86,6 +86,12 @@ Competitor pages are written under `wiki/competitors/`, market pages under
 with Competitors, Markets, and Signals sections while `log.md` remains
 append-only.
 
+## Demo
+
+Open `demo/dashboard.html` directly in a browser for a static hackathon
+dashboard. It uses sample local-run data and links to generated `wiki/`,
+`index.md`, and `log.md` artifacts when they exist.
+
 ## Schema Validation
 
 The `schema/` package includes competitor and signal JSON schemas plus a

@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CompIntel Scout Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0b0c;
+        --panel: #151515;
+        --panel-2: #1b1a17;
+        --line: #34312a;
+        --text: #f0eee8;
+        --muted: #aaa59b;
+        --blue: #69d2e7;
+        --green: #78d89d;
+        --yellow: #f6c86f;
+        --red: #ff837d;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #10100e 0%, var(--bg) 40rem);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 28px 0 44px;
+      }
+
+      header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 18px;
+        align-items: end;
+        margin-bottom: 22px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 4vw, 3.7rem);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        font-size: 1rem;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        font-size: 0.95rem;
+        letter-spacing: 0;
+      }
+
+      .subtitle {
+        margin-top: 10px;
+        max-width: 680px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .run-status {
+        display: grid;
+        gap: 8px;
+        justify-items: end;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        border: 1px solid rgba(120, 216, 157, 0.42);
+        background: rgba(120, 216, 157, 0.12);
+        color: var(--green);
+        border-radius: 999px;
+        padding: 7px 11px;
+        font-weight: 700;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .metric,
+      .panel {
+        border: 1px solid var(--line);
+        background: rgba(21, 21, 21, 0.9);
+        border-radius: 8px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+      }
+
+      .metric {
+        min-height: 92px;
+        padding: 16px;
+      }
+
+      .metric-label {
+        color: var(--muted);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+      }
+
+      .metric-value {
+        display: block;
+        margin-top: 8px;
+        font-size: 2rem;
+        font-weight: 800;
+      }
+
+      .metric small {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .flow-step {
+        border: 1px solid var(--line);
+        background: rgba(27, 26, 23, 0.92);
+        border-radius: 8px;
+        min-height: 76px;
+        padding: 12px;
+        position: relative;
+      }
+
+      .flow-step:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        width: 8px;
+        border-top: 1px solid var(--line);
+      }
+
+      .flow-kicker {
+        display: block;
+        color: var(--blue);
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .flow-step strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 1rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+        gap: 14px;
+      }
+
+      .panel {
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      .panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 52px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(27, 26, 23, 0.72);
+      }
+
+      .panel-head a,
+      .tiny-link {
+        color: var(--blue);
+        font-size: 0.86rem;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .panel-body {
+        padding: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+
+      th,
+      td {
+        padding: 13px 16px;
+        border-bottom: 1px solid rgba(38, 51, 64, 0.78);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        font-weight: 800;
+      }
+
+      td {
+        color: #e6e0d6;
+        font-size: 0.93rem;
+        line-height: 1.35;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .name-cell strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .name-cell span,
+      .muted {
+        color: var(--muted);
+      }
+
+      .tag {
+        display: inline-flex;
+        min-height: 24px;
+        align-items: center;
+        border: 1px solid rgba(106, 183, 255, 0.36);
+        border-radius: 999px;
+        padding: 2px 8px;
+        color: var(--blue);
+        background: rgba(106, 183, 255, 0.09);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .tag.hot {
+        border-color: rgba(255, 131, 125, 0.38);
+        color: var(--red);
+        background: rgba(255, 131, 125, 0.1);
+      }
+
+      .tag.ok {
+        border-color: rgba(120, 216, 157, 0.38);
+        color: var(--green);
+        background: rgba(120, 216, 157, 0.1);
+      }
+
+      .signal-list,
+      .log-list,
+      .index-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .signal-list li,
+      .log-list li,
+      .index-list li {
+        border-bottom: 1px solid rgba(38, 51, 64, 0.78);
+        padding: 14px 16px;
+      }
+
+      .signal-list li:last-child,
+      .log-list li:last-child,
+      .index-list li:last-child {
+        border-bottom: 0;
+      }
+
+      .signal-top,
+      .log-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 7px;
+      }
+
+      .signal-list p,
+      .log-list p,
+      .index-list p {
+        color: var(--muted);
+        line-height: 1.45;
+        font-size: 0.9rem;
+      }
+
+      .log-action {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        color: var(--yellow);
+        font-size: 0.82rem;
+      }
+
+      .log-time {
+        color: var(--muted);
+        font-size: 0.78rem;
+        white-space: nowrap;
+      }
+
+      .side-stack {
+        display: grid;
+        gap: 14px;
+      }
+
+      .index-list strong {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .footer-note {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 860px) {
+        header,
+        .grid,
+        .metrics,
+        .flow {
+          grid-template-columns: 1fr;
+        }
+
+        .run-status {
+          justify-items: start;
+        }
+
+        .flow-step:not(:last-child)::after {
+          display: none;
+        }
+
+        th:nth-child(3),
+        td:nth-child(3) {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <div>
+          <h1>CompIntel Scout</h1>
+          <p class="subtitle">
+            Static hackathon dashboard for the raw to wiki to schema workflow.
+            This demo view uses sample local-run data and links to generated repo files.
+          </p>
+        </div>
+        <div class="run-status">
+          <span class="status-pill"><span class="dot"></span> Local demo ready</span>
+          <span>Last sample run: 2026-07-08 14:31 UTC</span>
+        </div>
+      </header>
+
+      <section class="metrics" aria-label="Run summary">
+        <div class="metric">
+          <span class="metric-label">Competitors</span>
+          <span class="metric-value">3</span>
+          <small>2 direct, 1 adjacent</small>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Recent signals</span>
+          <span class="metric-value">5</span>
+          <small>pricing, product, hiring</small>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Raw captures</span>
+          <span class="metric-value">8</span>
+          <small>SERP JSON and page text</small>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Schema status</span>
+          <span class="metric-value">100%</span>
+          <small>sample payloads valid</small>
+        </div>
+      </section>
+
+      <section class="flow" aria-label="CompIntel Scout workflow">
+        <div class="flow-step">
+          <span class="flow-kicker">raw</span>
+          <strong>Bright Data capture</strong>
+        </div>
+        <div class="flow-step">
+          <span class="flow-kicker">schema</span>
+          <strong>Validate payload</strong>
+        </div>
+        <div class="flow-step">
+          <span class="flow-kicker">wiki</span>
+          <strong>Write page snapshot</strong>
+        </div>
+        <div class="flow-step">
+          <span class="flow-kicker">index</span>
+          <strong>Refresh entity map</strong>
+        </div>
+        <div class="flow-step">
+          <span class="flow-kicker">log</span>
+          <strong>Append run history</strong>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Tracked Competitors</h2>
+            <a href="../wiki/competitors/">wiki/competitors/</a>
+          </div>
+          <div class="panel-body">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 34%">Name</th>
+                  <th style="width: 18%">Category</th>
+                  <th style="width: 26%">Current read</th>
+                  <th style="width: 22%">Next watch</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="name-cell">
+                    <strong>Acme Analytics</strong>
+                    <span>example.com</span>
+                  </td>
+                  <td><span class="tag hot">direct</span></td>
+                  <td>Enterprise packaging is moving faster than public roadmap language.</td>
+                  <td>Pricing page and sales hiring.</td>
+                </tr>
+                <tr>
+                  <td class="name-cell">
+                    <strong>Northstar BI</strong>
+                    <span>northstar.example</span>
+                  </td>
+                  <td><span class="tag">adjacent</span></td>
+                  <td>Messaging shifted toward operations teams and away from analysts.</td>
+                  <td>Case studies and partner pages.</td>
+                </tr>
+                <tr>
+                  <td class="name-cell">
+                    <strong>SignalForge</strong>
+                    <span>signalforge.example</span>
+                  </td>
+                  <td><span class="tag ok">emerging</span></td>
+                  <td>Small footprint, but high velocity in product announcements.</td>
+                  <td>Launch notes and job posts.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="side-stack">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Recent Signals</h2>
+              <a href="../wiki/signals/">wiki/signals/</a>
+            </div>
+            <ul class="signal-list">
+              <li>
+                <div class="signal-top">
+                  <h3>Acme launches enterprise plan</h3>
+                  <span class="tag hot">product</span>
+                </div>
+                <p>New packaging surfaced on the public blog. Confidence 0.90.</p>
+              </li>
+              <li>
+                <div class="signal-top">
+                  <h3>Northstar updates pricing grid</h3>
+                  <span class="tag">pricing</span>
+                </div>
+                <p>Team tier now highlights usage-based reporting seats.</p>
+              </li>
+              <li>
+                <div class="signal-top">
+                  <h3>SignalForge hiring solutions lead</h3>
+                  <span class="tag ok">hiring</span>
+                </div>
+                <p>Role copy points at a services-heavy enterprise motion.</p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Latest Index Summary</h2>
+              <a href="../index.md">index.md</a>
+            </div>
+            <ul class="index-list">
+              <li>
+                <strong>Competitors</strong>
+                <p>Acme Analytics, Northstar BI, SignalForge</p>
+              </li>
+              <li>
+                <strong>Markets</strong>
+                <p>Revenue intelligence, self-serve BI</p>
+              </li>
+              <li>
+                <strong>Signals (latest entries)</strong>
+                <p>Enterprise plan launch, pricing grid update, hiring motion.</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top: 14px">
+        <div class="panel-head">
+          <h2>Recent Log Entries</h2>
+          <a href="../log.md">log.md</a>
+        </div>
+        <ul class="log-list">
+          <li>
+            <div class="log-top">
+              <span class="log-action">INGEST | raw/sample_competitor.json</span>
+              <span class="log-time">2026-07-08T14:31:00+00:00</span>
+            </div>
+            <p>validated competitor payload</p>
+          </li>
+          <li>
+            <div class="log-top">
+              <span class="log-action">SYNTH | wiki/competitors/acme_analytics.md</span>
+              <span class="log-time">2026-07-08T14:31:00+00:00</span>
+            </div>
+            <p>wrote competitor wiki page</p>
+          </li>
+          <li>
+            <div class="log-top">
+              <span class="log-action">INDEX | index.md</span>
+              <span class="log-time">2026-07-08T14:31:00+00:00</span>
+            </div>
+            <p>rebuilt entity index</p>
+          </li>
+        </ul>
+      </section>
+
+      <p class="footer-note">
+        Static sample view. Local links point at generated markdown artifacts when they exist.
+      </p>
+    </main>
+  </body>
+</html>
