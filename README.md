@@ -51,7 +51,7 @@ public demo-friendly format `[ISO8601] | ACTION | source | notes`.
 file-based JSON inputs, and returns useful error messages without making any
 network calls.
 
-## Ingest Layer
+## Ingest Pipeline
 
 Bright Data ingest helpers live in `src/compintel_scout/ingest/`. They accept
 injectable clients so tests and demos can run without live API calls or
@@ -61,13 +61,58 @@ hardcoded secrets.
   `raw/serp/{query_slug}_{unix_ts}.json`.
 - Web page captures are stored as markdown-friendly text at
   `raw/pages/{domain}_{unix_ts}.md`.
+- Bright Data credentials are loaded from `.env` or environment settings:
+  `BRIGHTDATA_CUSTOMER_ID`, `BRIGHTDATA_ZONE_SERP`, `BRIGHTDATA_ZONE_WEB`,
+  and `BRIGHTDATA_PASSWORD`.
+- The configured Bright Data clients can make live requests, while tests and
+  demos can still pass injected clients to avoid network calls.
+
+### Live ingest
+
+Create a local `.env` with your Bright Data credentials:
+
+```text
+BRIGHTDATA_CUSTOMER_ID=your_customer_id
+BRIGHTDATA_PASSWORD=your_zone_password
+BRIGHTDATA_ZONE_SERP=your_serp_zone
+BRIGHTDATA_ZONE_WEB=your_web_unlocker_zone
+```
+
+`BRIGHTDATA_API_KEY` is also supported for Bright Data direct API access. If it
+is omitted, CompIntel Scout uses Bright Data's documented proxy-style access
+with customer ID, zone, and password.
+
+Run one live ingest cycle:
+
+```bash
+PYTHONPATH=src python -m compintel_scout.ingest.pipeline --query "Salesforce Q2 2026 roadmap" --url "https://www.salesforce.com"
+```
+
+This writes a SERP JSON file to `raw/serp/{query_slug}_{unix_ts}.json` and a
+markdown-friendly page capture to `raw/pages/{domain}_{unix_ts}.md`.
+
+### Live ingest succeeded
+
+Observed output files from a successful live run:
+
+- `raw/serp/salesforce_q2_2026_roadmap_1783549135.json`
+- `raw/pages/salesforce_com_1783549138.md`
 
 ## Provider Routing
 
 `src/compintel_scout/synthesize/llm_router.py` selects the configured
-`LLM_PROVIDER` and returns a no-network placeholder client. `codex` requires
-`OPENAI_API_KEY` and `OPENAI_MODEL`, `sonar` requires `PERPLEXITY_API_KEY`,
-and `claude` requires `ANTHROPIC_API_KEY`.
+`LLM_PROVIDER` and exposes a unified `LLMRouter.complete(system, user) -> str`
+interface. The default client is a no-network placeholder; tests and future
+provider modules inject clients behind the same interface.
+
+Provider configuration:
+
+- `LLM_PROVIDER=codex` uses `OPENAI_API_KEY` and `OPENAI_MODEL`.
+- `LLM_PROVIDER=sonar` uses `PERPLEXITY_API_KEY`.
+- `LLM_PROVIDER=claude` uses `ANTHROPIC_API_KEY`.
+
+Unknown providers and missing provider-specific keys raise clear errors before
+any completion call is attempted.
 
 ## Pipeline Flow
 
@@ -86,22 +131,72 @@ Competitor pages are written under `wiki/competitors/`, market pages under
 with Competitors, Markets, and Signals sections while `log.md` remains
 append-only.
 
+## CompIntel Scout -> Enso Lead Gen
+
+CompIntel Scout is Enso Labs' second-brain for competitive and market
+intelligence. The `raw -> wiki -> schema` pattern becomes the research spine
+for lead generation workflows.
+
+- `wiki/leads/` stores enriched lead profiles, ICP fit scores, contacts, and
+  outreach drafts.
+- `wiki/roles/` stores buyer archetypes, pain points, and messaging angles.
+- Three agent layers sit on top of Scout:
+  1. Qualify Agent
+  2. Enrich Agent
+  3. Outreach Agent
+- Perplexity Sonar acts as the live web-grounded enrichment layer for recency
+  and synthesis, while Bright Data remains the raw acquisition layer.
+
 ## Demo
 
-Open `demo/dashboard.html` directly in a browser for a static hackathon
-dashboard. It uses sample local-run data and links to generated `wiki/`,
-`index.md`, and `log.md` artifacts when they exist.
+Run the 60-second hackathon demo:
 
-## Schema Validation
+1. Open `demo/dashboard.html` directly in a browser; no server or build step is
+   required.
+2. Start with the hero and pipeline overview: BrightData evidence lands in
+   `raw/`, synthesis routes through `LLM_PROVIDER`, schemas gate writes, then
+   `index.md` and `log.md` make the run navigable.
+3. Scan the competitors, signals, index summary, and log snippet to see how the
+   local second brain becomes production-ready: swap in live BrightData clients,
+   inject real provider clients behind `LLMRouter`, and keep the same
+   validation/index/log surfaces.
+
+### Judge flow
+
+1. Inspect `raw/serp/` for live Bright Data SERP captures, including `raw/serp/salesforce_q2_2026_roadmap_1783549135.json`.
+2. Inspect `raw/pages/` for live Bright Data Web Unlocker page captures, including `raw/pages/salesforce_com_1783549138.md`.
+3. Inspect `log.md` and `index.md` to verify append-only run history and navigable entity index surfaces.
+4. Open `demo/dashboard.html` to see the end-to-end `raw -> wiki -> schema -> index -> log` story in one static view.
+
+## Schema
 
 The `schema/` package includes competitor and signal JSON schemas plus a
-dependency-free validator:
+dependency-free validator. Payloads are checked before wiki pages or index
+updates are written.
+
+Competitor objects require:
+
+```text
+slug, name, category[], last_updated, sources[], confidence, summary,
+products[], pricing[], signals[], moat, threat_level
+```
+
+Signal objects require:
+
+```text
+slug, type, date, headline, source_url, entities[], summary
+```
 
 ```python
 from schema.validate import validate_competitor, validate_signal
+
+competitor = validate_competitor(payload)
 ```
 
-Validation returns a `ValidationResult` with `valid` and `errors` fields.
+`validate_competitor()` and `validate_signal()` return a validated `dict` or
+raise `SchemaValidationError` with field-specific messages. Lower-level helpers
+such as `validate_payload()` and `validate_json_file()` return a
+`ValidationResult` for test and CLI-style workflows.
 
 ## Development
 

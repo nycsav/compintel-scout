@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lead",
+  "type": "object",
+  "required": ["company_slug", "source_urls", "collected_at"],
+  "properties": {
+    "company_slug": { "type": "string" },
+    "company_name": { "type": "string" },
+    "domain": { "type": "string", "format": "uri" },
+    "industry": { "type": "string" },
+    "employee_range": {
+      "type": "string",
+      "enum": ["1-10", "11-50", "51-200", "201-500", "500+"]
+    },
+    "tech_stack": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "buying_signals": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "icp_fit_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10
+    },
+    "icp_fit_rationale": { "type": "string" },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "role_slug": { "type": "string" },
+          "title": { "type": "string" },
+          "linkedin_url": { "type": "string", "format": "uri" },
+          "email_guess": { "type": "string" }
+        }
+      }
+    },
+    "source_urls": {
+      "type": "array",
+      "items": { "type": "string", "format": "uri" }
+    },
+    "collected_at": { "type": "string", "format": "date-time" },
+    "llm_provider": {
+      "type": "string",
+      "enum": ["codex", "sonar", "claude"]
+    }
+  }
+}
